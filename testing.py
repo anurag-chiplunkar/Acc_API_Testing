@@ -2,6 +2,7 @@ import requests
 import pandas as pd
 import json
 import os
+from datetime import datetime
 
 # --- Configuration ---
 # IMPORTANT: Replace with your actual chatbot API URL
@@ -10,19 +11,24 @@ CHATBOT_API_URL = "http://your-chatbot-api-endpoint.com/query"
 # Path to the text file containing user queries (one query per line)
 INPUT_QUERIES_FILE = "user_queries.txt"
 
-# Path for the output Excel file
-OUTPUT_EXCEL_FILE = "chatbot_test_results.xlsx"
+# Base name for the output Excel file (date will be appended)
+OUTPUT_EXCEL_FILENAME_BASE = "chatbot_test_results"
 
 # --- Main Function ---
 def test_chatbot():
     """
     Reads queries from a file, sends them to the chatbot API,
-    and stores the results in an Excel file.
+    and stores the results in an Excel file. The output file name
+    is validated against the current date for appending or creating a new file.
     """
     test_results = [] # List to store dictionaries for each row in Excel
 
     print(f"Starting chatbot testing process...")
     print(f"Reading queries from: {INPUT_QUERIES_FILE}")
+
+    # Generate the output Excel filename with the current date
+    current_date = datetime.now().strftime("%Y-%m-%d")
+    OUTPUT_EXCEL_FILE = f"{OUTPUT_EXCEL_FILENAME_BASE}_{current_date}.xlsx"
 
     # Check if the input queries file exists
     if not os.path.exists(INPUT_QUERIES_FILE):
@@ -54,7 +60,7 @@ def test_chatbot():
                     "model_url": "",
                     "api_version": "",
                     "tuning_params": {
-                        "model+: "",
+                        "model": "", # Corrected key from "model+" to "model"
                         "max_tokens": 0,
                         "top_p": 1.0,
                         "frequency_penalty": 0,
@@ -62,18 +68,17 @@ def test_chatbot():
                         "stop": "string"
                     }
                 },
-                "user_query": ""
-                # Add any other required parameters here, e.g., "session_id": "test_session"
+                "user_query": query # Ensure user_query is populated
             }
 
             try:
                 # Send the request to the chatbot API
                 # You might need to adjust headers if your API requires them (e.g., API key)
                 headers = {
-                    "host_name": key,
-                    "https_path": key,
-                    "client_id": key,
-                    "client_secret": key,
+                    "host_name": "your_host_name",    # Replace with actual key or value
+                    "https_path": "your_https_path",  # Replace with actual key or value
+                    "client_id": "your_client_id",    # Replace with actual key or value
+                    "client_secret": "your_client_secret", # Replace with actual key or value
                     "Content-Type": "application/json"
                 }
                 response = requests.post(CHATBOT_API_URL, json=payload, headers=headers, timeout=30)
@@ -127,11 +132,26 @@ def test_chatbot():
                 })
 
 
-        # Create a Pandas DataFrame and save to Excel
-        if test_results:
-            df = pd.DataFrame(test_results)
-            df.to_excel(OUTPUT_EXCEL_FILE, index=False)
-            print(f"\n--- Testing Complete ---")
+        # Create a Pandas DataFrame from the new results
+        new_df = pd.DataFrame(test_results)
+
+        # Check if the Excel file already exists for the current date
+        if os.path.exists(OUTPUT_EXCEL_FILE):
+            print(f"\nAppending results to existing file: '{OUTPUT_EXCEL_FILE}'")
+            try:
+                existing_df = pd.read_excel(OUTPUT_EXCEL_FILE)
+                combined_df = pd.concat([existing_df, new_df], ignore_index=True)
+            except Exception as e:
+                print(f"Error reading existing Excel file, creating new one: {e}")
+                combined_df = new_df # If reading fails, just use the new data
+        else:
+            print(f"\nCreating new file for today: '{OUTPUT_EXCEL_FILE}'")
+            combined_df = new_df
+        
+        # Save the combined DataFrame to Excel
+        if not combined_df.empty:
+            combined_df.to_excel(OUTPUT_EXCEL_FILE, index=False)
+            print(f"--- Testing Complete ---")
             print(f"Results saved to '{OUTPUT_EXCEL_FILE}' successfully.")
         else:
             print("\nNo test results to save.")
