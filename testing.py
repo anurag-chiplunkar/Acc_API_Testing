@@ -4,33 +4,26 @@ import json
 import os
 from datetime import datetime
 
-# --- Configuration ---
-# IMPORTANT: Replace with your actual chatbot API URL
 CHATBOT_API_URL = "http://your-chatbot-api-endpoint.com/query"
 
-# Path to the text file containing user queries (one query per line)
 INPUT_QUERIES_FILE = "user_queries.txt"
 
-# Base name for the output Excel file (date will be appended)
 OUTPUT_EXCEL_FILENAME_BASE = "chatbot_test_results"
 
-# --- Main Function ---
 def test_chatbot():
     """
     Reads queries from a file, sends them to the chatbot API,
     and stores the results in an Excel file. The output file name
     is validated against the current date for appending or creating a new file.
     """
-    test_results = [] # List to store dictionaries for each row in Excel
+    test_results = []
 
     print(f"Starting chatbot testing process...")
     print(f"Reading queries from: {INPUT_QUERIES_FILE}")
 
-    # Generate the output Excel filename with the current date
     current_date = datetime.now().strftime("%Y-%m-%d")
     OUTPUT_EXCEL_FILE = f"{OUTPUT_EXCEL_FILENAME_BASE}_{current_date}.xlsx"
 
-    # Check if the input queries file exists
     if not os.path.exists(INPUT_QUERIES_FILE):
         print(f"Error: Input file '{INPUT_QUERIES_FILE}' not found.")
         print("Please create 'user_queries.txt' and add your natural language queries, one per line.")
@@ -38,7 +31,7 @@ def test_chatbot():
 
     try:
         with open(INPUT_QUERIES_FILE, 'r', encoding='utf-8') as f:
-            user_queries = [line.strip() for line in f if line.strip()] # Read non-empty lines
+            user_queries = [line.strip() for line in f if line.strip()] 
         
         if not user_queries:
             print(f"No queries found in '{INPUT_QUERIES_FILE}'. Please add queries to the file.")
@@ -49,8 +42,6 @@ def test_chatbot():
         for i, query in enumerate(user_queries):
             print(f"\n--- Processing Query {i+1}/{len(user_queries)}: '{query}' ---")
             
-            # Prepare the payload for your chatbot API
-            # IMPORTANT: Adjust this dictionary structure to match your chatbot's expected payload
             payload = {
                 "gateway": "",
                 "service_provider": "",
@@ -60,7 +51,7 @@ def test_chatbot():
                     "model_url": "",
                     "api_version": "",
                     "tuning_params": {
-                        "model": "", # Corrected key from "model+" to "model"
+                        "model": "",
                         "max_tokens": 0,
                         "top_p": 1.0,
                         "frequency_penalty": 0,
@@ -68,26 +59,22 @@ def test_chatbot():
                         "stop": "string"
                     }
                 },
-                "user_query": query # Ensure user_query is populated
+                "user_query": query 
             }
 
             try:
-                # Send the request to the chatbot API
-                # You might need to adjust headers if your API requires them (e.g., API key)
                 headers = {
-                    "host_name": "your_host_name",    # Replace with actual key or value
-                    "https_path": "your_https_path",  # Replace with actual key or value
-                    "client_id": "your_client_id",    # Replace with actual key or value
-                    "client_secret": "your_client_secret", # Replace with actual key or value
+                    "host_name": "your_host_name",    
+                    "https_path": "your_https_path",  
+                    "client_id": "your_client_id",   
+                    "client_secret": "your_client_secret", 
                     "Content-Type": "application/json"
                 }
                 response = requests.post(CHATBOT_API_URL, json=payload, headers=headers, timeout=30)
-                response.raise_for_status() # Raise an exception for HTTP errors (4xx or 5xx)
+                response.raise_for_status() 
 
                 chatbot_response_data = response.json()
 
-                # IMPORTANT: Adjust these keys to match the actual keys in your chatbot's response
-                # For example, if your bot returns {"sql": "...", "data": "..."}, change these.
                 generated_sql = chatbot_response_data.get("sql_query", "N/A")
                 db_response = chatbot_response_data.get("db_response", "N/A")
 
@@ -97,7 +84,7 @@ def test_chatbot():
                 test_results.append({
                     "Original Query": query,
                     "Generated SQL": generated_sql,
-                    "Database Response": str(db_response) # Convert response to string for Excel
+                    "Database Response": str(db_response)
                 })
 
             except requests.exceptions.Timeout:
@@ -132,10 +119,8 @@ def test_chatbot():
                 })
 
 
-        # Create a Pandas DataFrame from the new results
         new_df = pd.DataFrame(test_results)
 
-        # Check if the Excel file already exists for the current date
         if os.path.exists(OUTPUT_EXCEL_FILE):
             print(f"\nAppending results to existing file: '{OUTPUT_EXCEL_FILE}'")
             try:
@@ -143,12 +128,11 @@ def test_chatbot():
                 combined_df = pd.concat([existing_df, new_df], ignore_index=True)
             except Exception as e:
                 print(f"Error reading existing Excel file, creating new one: {e}")
-                combined_df = new_df # If reading fails, just use the new data
+                combined_df = new_df 
         else:
             print(f"\nCreating new file for today: '{OUTPUT_EXCEL_FILE}'")
             combined_df = new_df
         
-        # Save the combined DataFrame to Excel
         if not combined_df.empty:
             combined_df.to_excel(OUTPUT_EXCEL_FILE, index=False)
             print(f"--- Testing Complete ---")
@@ -161,6 +145,5 @@ def test_chatbot():
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
 
-# Call the main function to run the test
 if __name__ == "__main__":
     test_chatbot()
