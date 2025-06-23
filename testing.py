@@ -46,14 +46,36 @@ def test_chatbot():
             # Prepare the payload for your chatbot API
             # IMPORTANT: Adjust this dictionary structure to match your chatbot's expected payload
             payload = {
-                "user_query": query
+                "gateway": "",
+                "service_provider": "",
+                "kb_connector": "",
+                "catalog_provider": "",
+                "model_params": {
+                    "model_url": "",
+                    "api_version": "",
+                    "tuning_params": {
+                        "model+: "",
+                        "max_tokens": 0,
+                        "top_p": 1.0,
+                        "frequency_penalty": 0,
+                        "presence_penalty": 0,
+                        "stop": "string"
+                    }
+                },
+                "user_query": ""
                 # Add any other required parameters here, e.g., "session_id": "test_session"
             }
 
             try:
                 # Send the request to the chatbot API
                 # You might need to adjust headers if your API requires them (e.g., API key)
-                headers = {'Content-Type': 'application/json'}
+                headers = {
+                    "host_name": key,
+                    "https_path": key,
+                    "client_id": key,
+                    "client_secret": key,
+                    "Content-Type": "application/json"
+                }
                 response = requests.post(CHATBOT_API_URL, json=payload, headers=headers, timeout=30)
                 response.raise_for_status() # Raise an exception for HTTP errors (4xx or 5xx)
 
